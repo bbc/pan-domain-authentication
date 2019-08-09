@@ -25,11 +25,11 @@ val sonatypeReleaseSettings =
   releaseSettings ++ sonatypeSettings ++ Seq(
     licenses := Seq("Apache V2" -> url("http://www.apache.org/licenses/LICENSE-2.0.html")),
     scmInfo := Some(ScmInfo(
-      url("https://github.com/guardian/pan-domain-authentication"),
-      "scm:git:git@github.com:guardian/pan-domain-authentication.git"
+      url("https://github.com/bbc/pan-domain-authentication"),
+      "scm:git:git@github.com:bbc/pan-domain-authentication.git"
     )),
     pomExtra := {
-      <url>https://github.com/guardian/an-domain-authentication</url>
+      <url>https://github.com/bbc/pan-domain-authentication</url>
         <developers>
           <developer>
             <id>steppenwells</id>
