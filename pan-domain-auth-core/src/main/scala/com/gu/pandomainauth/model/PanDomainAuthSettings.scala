@@ -7,6 +7,7 @@ case class PanDomainAuthSettings(
   privateKey: PrivateKey,
   cookieSettings: CookieSettings,
   oAuthSettings: OAuthSettings,
+  ppSettings: PartnerPlatformSettings,
   google2FAGroupSettings: Option[Google2FAGroupSettings]
 )
 
@@ -18,6 +19,12 @@ case class OAuthSettings(
   clientId: String,
   clientSecret: String,
   discoveryDocumentUrl: String
+)
+
+case class PartnerPlatformSettings(
+  ppEnabled: Boolean,
+  ppUrl: Option[String],
+  ppApiKey: Option[String]
 )
 
 case class Google2FAGroupSettings(
@@ -41,6 +48,15 @@ object PanDomainAuthSettings{
       settingMap("discoveryDocumentUrl")
     )
 
+    val ppSettings: PartnerPlatformSettings = {
+      settingMap.getOrElse("partnerPlatformEnabled", "false").toBoolean match {
+        case false =>
+          PartnerPlatformSettings(false, None, None)
+        case true =>
+          PartnerPlatformSettings(true, settingMap.get("partnerPlatformUrl"), settingMap.get("partnerPlatformApiKey"))
+      }
+    }
+
     val google2faSettings = for(
       serviceAccountId   <- settingMap.get("googleServiceAccountId");
       serviceAccountCert <- settingMap.get("googleServiceAccountCert");
@@ -55,6 +71,7 @@ object PanDomainAuthSettings{
       PrivateKey(settingMap("privateKey")),
       cookieSettings,
       oAuthSettings,
+      ppSettings,
       google2faSettings
     )
   }

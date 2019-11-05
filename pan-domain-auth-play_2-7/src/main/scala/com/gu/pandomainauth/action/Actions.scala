@@ -69,7 +69,7 @@ trait AuthActions {
     */
   def authCallbackUrl: String
 
-  val OAuth = new OAuth(settings.oAuthSettings, system, authCallbackUrl)
+  val OAuth = new OAuth(settings.oAuthSettings, settings.ppSettings, system, authCallbackUrl)
 
   /**
     * Application name used for initialising Google API clients for directory group checking
@@ -141,7 +141,8 @@ trait AuthActions {
           claimedAuth.copy(
             authenticatingSystem = system,
             authenticatedIn = existingAuth.authenticatedIn ++ Set(system),
-            multiFactor = checkMultifactor(claimedAuth)
+            multiFactor = checkMultifactor(claimedAuth),
+            permissions = claimedAuth.permissions ++ existingAuth.permissions
           )
         case None =>
           logger.debug("fresh user login")

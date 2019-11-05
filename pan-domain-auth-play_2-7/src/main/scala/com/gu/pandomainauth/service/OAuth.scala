@@ -3,7 +3,7 @@ package com.gu.pandomainauth.service
 import java.math.BigInteger
 import java.security.SecureRandom
 
-import com.gu.pandomainauth.model.{AuthenticatedUser, OAuthSettings, User}
+import com.gu.pandomainauth.model.{AuthenticatedUser, OAuthSettings, PartnerPlatformSettings, User}
 import play.api.libs.json.JsValue
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.mvc.Results.Redirect
@@ -15,7 +15,7 @@ import scala.language.postfixOps
 
 class OAuthException(val message: String, val throwable: Throwable = null) extends Exception(message, throwable)
 
-class OAuth(config: OAuthSettings, system: String, redirectUrl: String) {
+class OAuth(config: OAuthSettings, ppConfig: PartnerPlatformSettings, system: String, redirectUrl: String) {
   var discoveryDocumentHolder: Option[Future[DiscoveryDocument]] = None
 
   private def discoveryDocument(implicit context: ExecutionContext, ws: WSClient): Future[DiscoveryDocument] =
@@ -76,7 +76,8 @@ class OAuth(config: OAuthSettings, system: String, redirectUrl: String) {
           oAuthResponse(response) { json =>
             val token = Token.fromJson(json)
             val jwt = token.jwt
-            ws.url(dd.userinfo_endpoint)
+
+            val authUserFut = ws.url(dd.userinfo_endpoint)
               .withHttpHeaders("Authorization" -> s"Bearer ${token.access_token}")
               .get().map { response =>
               oAuthResponse(response) { json =>
@@ -91,13 +92,32 @@ class OAuth(config: OAuthSettings, system: String, redirectUrl: String) {
                   authenticatingSystem = system,
                   authenticatedIn = Set(system),
                   jwt.claims.exp * 1000,
-                  false
+                  multiFactor = false
                 )
               }
+            }
+
+            ppConfig.ppEnabled match {
+              case true => authUserFut.flatMap(authUser =>
+                            extractPermissions(jwt) map {
+                              permissions => authUser.copy(permissions = permissions)
+                            }
+                          )
+              case false => authUserFut
             }
           }
         }
       }
+    }
+  }
+
+  def extractPermissions(token: JsonWebToken)(implicit context: ExecutionContext, ws: WSClient): Future[Set[String]] = {
+    ws.url(ppConfig.ppUrl.get)
+      .addHttpHeaders(("x-api-key", ppConfig.ppApiKey.get), ("Authorization", s"Bearer ${token.jwt}"))
+      .get().map { response =>
+        oAuthResponse(response) { json =>
+          (json \ "included" \\ "name").map(_.toString).toSet
+        }
     }
   }
 }

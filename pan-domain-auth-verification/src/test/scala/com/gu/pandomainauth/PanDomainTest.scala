@@ -15,7 +15,7 @@ class PanDomainTest extends FreeSpec with Matchers with Inside {
   }
 
   "authStatus" - {
-    val authUser = AuthenticatedUser(User("test", "user", "test.user@example.com", None), "testsuite", Set("testsuite"), new Date().getTime + 86400, multiFactor = true)
+    val authUser = AuthenticatedUser(User("test", "user", "test.user@example.com", None), "testsuite", Set("testsuite"), new Date().getTime + 86400, multiFactor = true, Set("Grid Access", "another"))
     val validCookieData = CookieUtils.generateCookieData(authUser, testPrivateKey)
 
     "returns `Authenticated` for valid cookie data that passes the validation check" in {
