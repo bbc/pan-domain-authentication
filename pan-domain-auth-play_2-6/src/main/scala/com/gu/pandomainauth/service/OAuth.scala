@@ -4,6 +4,7 @@ import java.math.BigInteger
 import java.security.SecureRandom
 
 import com.gu.pandomainauth.model.{AuthenticatedUser, OAuthSettings, PartnerPlatformSettings, User}
+import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.mvc.Results.Redirect
@@ -115,9 +116,12 @@ class OAuth(config: OAuthSettings, ppConfig: PartnerPlatformSettings, system: St
     ws.url(ppConfig.ppUrl.get)
       .addHttpHeaders(("x-api-key", ppConfig.ppApiKey.get), ("Authorization", s"Bearer ${token.jwt}"))
       .get().map { response =>
-      oAuthResponse(response) { json =>
-        (json \ "included" \\ "name").map(_.toString).toSet
-      }
+        response.status match {
+          case errorCode if errorCode >= 300 =>
+            Logger.info(s"Error code received from permissions provider, returning no permissions. Status code: $errorCode")
+            return Future(Set())
+          case _ => (response.json \ "included" \\ "name").map(_.toString).toSet
+        }
     }
   }
 }
