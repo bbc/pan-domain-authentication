@@ -117,9 +117,10 @@ class OAuth(config: OAuthSettings, ppConfig: PartnerPlatformSettings, system: St
       .addHttpHeaders(("x-api-key", ppConfig.ppApiKey.get), ("Authorization", s"Bearer ${token.jwt}"))
       .get().map { response =>
         response.status match {
-          case errorCode if errorCode >= 300 =>
+          case errorCode if errorCode >= 300 => {
             Logger.info(s"Error code received from permissions provider, returning no permissions. Status code: $errorCode")
-            return Future(Set())
+            Set()
+          }
           case _ => (response.json \ "included" \\ "name").map(_.toString).toSet
         }
     }

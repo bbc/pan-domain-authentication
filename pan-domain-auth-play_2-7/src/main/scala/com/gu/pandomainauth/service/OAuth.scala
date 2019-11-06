@@ -121,7 +121,7 @@ class OAuth(config: OAuthSettings, ppConfig: PartnerPlatformSettings, system: St
       response.status match {
         case errorCode if errorCode >= 300 =>
           logger.info(s"Error code received from permissions provider, returning no permissions. Status code: $errorCode")
-          return Future(Set())
+          Set()
         case _ => (response.json \ "included" \\ "name").map(_.toString).toSet
       }
     }
